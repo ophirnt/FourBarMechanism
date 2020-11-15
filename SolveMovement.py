@@ -162,3 +162,5 @@ plot = ( ggplot(sol) +
          coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y) + # Scales plot limits, avoiding it to be bigger than necessary. You may comment this out if you wish to do so.
          theme_bw() # Plot is prettier with this theme compared to the default.
          ) 
+    
+plot.save('SolutionPlot.pdf', dpi = 330, width = 50, height = 30, units = 'cm')
