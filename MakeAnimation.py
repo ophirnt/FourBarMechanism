@@ -1,11 +1,12 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Nov 15 04:45:28 2020
+Created on Mon Sep  9 17:58:09 2019
 
 @author: ophir
 """
 
-''' This script should provide a good example on how to produce four bar mechanism figures using the FourBarMechanism class. Plots of the mechanism
+''' This script should provide a good example on how to produce four bar mechanism animations using the FourBarMechanism class. Plots of the mechanism
 are produced and animated using plotnine, a ggplot2 port for Python. '''
 
 from FourBarMechanism import FourBarMechanism
@@ -42,7 +43,28 @@ SCALE_Y = (-100, 350) # sets the Y limits for the plot frame
 
 mech = FourBarMechanism(*INPUT_DATA) # instantiates a FourBarMechanism object
 
-sol = pd.DataFrame({'theta2': mech.theta2, 
+solution = pd.DataFrame(columns = ['time', 'theta2', 'omega2', 'alpha2', 'Ro2', 'Ro4', 'Ra', 'Rba', 'Rbc', 'Rpa', 'Rpc',
+                                   'Va', 'Vba', 'Vbc', 'Vpaa', 'Vpac', 'Aa', 'Aba', 'Abc', 'Apaa', 'Apac', 'theta3a',
+                                   'theta3c', 'theta4a', 'theta4c', 'omega3a', 'omega3c', 'alpha3a', 'alpha3c',
+                                   'alpha4a', 'alpha4c'\
+                                   ]) # Data frame which shall store the four bar mechanism propreties for plotting
+
+theta2_0 = mech.theta2 # Initial position of theta2   
+steps = np.linspace(START_TIME, END_TIME, TIME_STEPS) # Time steps of the simulation
+
+
+# Calculates the mechanism movements and stores them in the DataFrame
+for time in steps:
+    
+    deltaT = time
+
+    print('Time step:', time, 's')
+    
+    # Uses the uniformly accelerated movement position equation to determine new theta2 position and determine new mechanism properties
+    mech.updateTheta2(theta2_0 + mech.omega2 * deltaT + mech.alpha2 * deltaT**2/2) 
+    
+    new = pd.DataFrame({'time': time, 
+                        'theta2': mech.theta2, 
                         'omega2': mech.omega2, 
                         'alpha2': mech.alpha2, 
                         'Ro2': mech.Ro2, 
@@ -73,8 +95,19 @@ sol = pd.DataFrame({'theta2': mech.theta2,
                         'alpha4a': mech.alpha4[0],
                         'alpha4c': mech.alpha4[1]},
                         index = [0])
-k = 0
-plot = ( ggplot(sol) + 
+    #print(new)
+    
+    solution = solution.append(new, ignore_index=True)
+    
+def plot(solu, k):
+    
+    # Generates a plot of the four bar mechanism, which represents a frame in the animation
+    
+    print("Frame: ", k)
+    
+    sol = solu[k:k+1]
+    
+    p = ( ggplot(sol) + 
          # MAIN LINKAGE
          geom_segment(aes(x = 0, y = 0, xend = sol.Ro4[k].real, yend = sol.Ro4[k].imag)) +
          geom_point(aes(x=0, y=0), shape = 'o', size = 3) +
@@ -114,3 +147,24 @@ plot = ( ggplot(sol) +
          coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y) + # Scales plot limits, avoiding it to be bigger than necessary. You may comment this out if you wish to do so.
          theme_bw() # Plot is prettier with this theme compared to the default.
          ) 
+    
+    return p
+
+pd.options.mode.chained_assignment = None # Avoids annoying warning that makes the code run slow 
+
+# Iterates on the solution DataFrame and produces animation frames, storing them on a list
+plotlist = [plot(solution, k) for k in range(TIME_STEPS)]
+
+# Creates and saves an animation based on the frames list. You may change the interval value to make the animation faster or slower.
+# Interval represents the delay between frames in miliseconds. It is recommended to base this interval value on the omega2 and alpha2 values, but
+# trial and error works too. If the interval is too long, the animation becomes very static and slow. Otherwise, it gets very stuttery and fast.
+#%%
+print("Creating animation file.")
+
+anim = animation.PlotnineAnimation(plotlist, interval = 1/FPS * 1000 * SLOWING_FACTOR) 
+
+print("Saving animation file.")
+
+anim.save('testAnimation.mp4')
+
+print("Animation file saved.")
