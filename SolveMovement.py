@@ -6,15 +6,16 @@ Created on Mon Sep  9 17:58:09 2019
 @author: ophir
 """
 
+''' This script should provide a good example on how to produce four bar mechanism animations using the FourBarMechanism class. Plots of the mechanism
+are produced and animated using plotnine, a ggplot2 port for Python. '''
+
 from FourBarMechanism import FourBarMechanism
 from math import pi
 import pandas as pd
 import numpy as np
 
-from plotnine import ggplot, aes, geom_line, geom_point, \
-scale_linetype_manual, scale_shape_manual, scale_size_manual, theme_bw, \
-labs, theme, element_blank, element_text, element_rect, geom_segment, animation, \
-arrow, geom_label, geom_text, coord_cartesian
+from plotnine import ggplot, aes, geom_point, theme_bw, \
+labs, geom_segment, animation, arrow, coord_cartesian, annotate
 
 
 INPUT_DATA = (
@@ -29,32 +30,39 @@ INPUT_DATA = (
         pi/6 # delta3
         )
 
+FPS = 72 # Frames per second of animation
 START_TIME = 0
-END_TIME = 10
-TIME_STEPS = 300
-ACC_SCALE = 0.01 #scale acceleration
-SCALE_X = (-150, 150) 
-SCALE_Y = (-100, 300)
+END_TIME = 5 # Two mechanism turns
+SLOWING_FACTOR = 2.5 # Slowing factor. 1x is normal speed
+TIME_STEPS = int( (END_TIME-START_TIME) * FPS)
+ACC_SCALE = 0.01 # scale acceleration vector (otherwise they may get disproportionately long)
+SCALE_X = (-125, 175) # sets the X limits for the plot frame
+SCALE_Y = (-100, 350) # sets the Y limits for the plot frame
 
 ###
 
-mech = FourBarMechanism(*INPUT_DATA)
+mech = FourBarMechanism(*INPUT_DATA) # instantiates a FourBarMechanism object
 
 solution = pd.DataFrame(columns = ['time', 'theta2', 'omega2', 'alpha2', 'Ro2', 'Ro4', 'Ra', 'Rba', 'Rbc', 'Rpa', 'Rpc',
                                    'Va', 'Vba', 'Vbc', 'Vpaa', 'Vpac', 'Aa', 'Aba', 'Abc', 'Apaa', 'Apac', 'theta3a',
                                    'theta3c', 'theta4a', 'theta4c', 'omega3a', 'omega3c', 'alpha3a', 'alpha3c',
                                    'alpha4a', 'alpha4c'\
-                                   ])
+                                   ]) # Data frame which shall store the four bar mechanism propreties for plotting
 
-steps = np.linspace(START_TIME, END_TIME, TIME_STEPS)
-deltaT = 0
+theta2_0 = mech.theta2 # Initial position of theta2   
+steps = np.linspace(START_TIME, END_TIME, TIME_STEPS) # Time steps of the simulation
 
+
+# Calculates the mechanism movements and stores them in the DataFrame
 for time in steps:
     
-    deltaT = time - deltaT
+    deltaT = time
+
     print('Time step:', time, 's')
     
-    mech.updateTheta2(mech.theta2 + mech.omega2 * deltaT + mech.alpha2 * deltaT**2/2)
+    # Uses the uniformly accelerated movement position equation to determine new theta2 position and determine new mechanism properties
+    mech.updateTheta2(theta2_0 + mech.omega2 * deltaT + mech.alpha2 * deltaT**2/2) 
+    
     new = pd.DataFrame({'time': time, 
                         'theta2': mech.theta2, 
                         'omega2': mech.omega2, 
@@ -93,28 +101,30 @@ for time in steps:
     
 def plot(solu, k):
     
-    print("frame: ", k)
+    # Generates a plot of the four bar mechanism, which represents a frame in the animation
+    
+    print("Frame: ", k)
     
     sol = solu[k:k+1]
     
     p = ( ggplot(sol) + 
-         # MAIN ELO
+         # MAIN LINKAGE
          geom_segment(aes(x = 0, y = 0, xend = sol.Ro4[k].real, yend = sol.Ro4[k].imag)) +
          geom_point(aes(x=0, y=0), shape = 'o', size = 3) +
          geom_point(aes(x = sol.Ro4[k].real, y = sol.Ro4[k].imag), shape = 'o', size = 3) +
-         # 2ND ELO
+         # 2ND LINKAGE
          geom_segment(aes(x = 0, y = 0, xend = sol.Ra[k].real, yend = sol.Ra[k].imag)) +
          geom_point(aes(x = sol.Ra[k].real, y = sol.Ra[k].imag), shape = 'o', size = 3) +
-         # P ELO
+         # AP LINKAGE
          geom_segment(aes(x = sol.Ra[k].real, y = sol.Ra[k].imag, xend = sol.Rpa[k].real, yend = sol.Rpa[k].imag)) +
          geom_point(aes(x = sol.Rpa[k].real, y = sol.Rpa[k].imag), shape = 'o', size = 3) +
-         # 3RD ELO
+         # 3RD LINKAGE
          geom_segment(aes(x = sol.Ra[k].real, y = sol.Ra[k].imag, xend = sol.Rba[k].real, yend = sol.Rba[k].imag)) +
          geom_point(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag), shape = 'o', size = 3) +
-         # 4TH ELO
+         # 4TH LINKAGE
          geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, xend = sol.Ro4[k].real, yend = sol.Ro4[k].imag)) +
          geom_point(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag), shape = 'o', size = 3) +
-         # ACCELERATIONS ARROWS
+         # ACCELERATIONS ARROWS (you may remove if you wish to remove acceleration informations)
          geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, \
                           xend = sol.Rba[k].real + sol.Aba[k].real * ACC_SCALE, \
                           yend = sol.Rba[k].imag + sol.Aba[k].imag * ACC_SCALE),\
@@ -127,24 +137,34 @@ def plot(solu, k):
                           xend = sol.Rpa[k].real + sol.Apaa[k].real * ACC_SCALE, \
                           yend = sol.Rpa[k].imag + sol.Apaa[k].imag * ACC_SCALE),\
                       colour='red', arrow=arrow()) + # Point C
-         # ACCELERATIONS TEXT
-         geom_text(aes(x = sol.Rba[k].real+10, y = sol.Rba[k].imag+10, label = np.absolute(sol.Aba[k])), colour='red') +
-         geom_text(aes(x = sol.Ra[k].real+10, y = sol.Ra[k].imag+10, label = np.absolute(sol.Aa[k])), colour='red') +
-         geom_text(aes(x = sol.Rpa[k].real+10, y = sol.Rpa[k].imag+10, label = np.absolute(sol.Apaa[k])), colour='red') +
-         #
-         labs(x='x', y='y') +
-         coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y)
-         
+         # ACCELERATIONS TEXTS (you may comment if you wish to remove acceleration informations)
+         # inputting text between '$ $' makes plotnine produce beautiful LaTeX text
+         annotate("text", x = sol.Rba[k].real-30, y = sol.Rba[k].imag+10, label = f'${np.absolute(sol.Aba[k])/1000:.2f}~m/s^2$', colour='red') +
+         annotate("text", x = sol.Ra[k].real+20, y = sol.Ra[k].imag-20, label = f'${np.absolute(sol.Aa[k])/1000:.2f}~m/s^2$', colour='red') +
+         annotate("text", x = sol.Rpa[k].real+10, y = sol.Rpa[k].imag+20, label = f'${np.absolute(sol.Apaa[k])/1000:.2f}~m/s^2$', colour='red') +
+         # 
+         labs(x='$x$', y='$y$') +
+         coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y) + # Scales plot limits, avoiding it to be bigger than necessary. You may comment this out if you wish to do so.
+         theme_bw() # Plot is prettier with this theme compared to the default.
          ) 
     
     return p
 
 pd.options.mode.chained_assignment = None # Avoids annoying warning that makes the code run slow 
 
-plotlist = (plot(solution, k) for k in range(TIME_STEPS))
+# Iterates on the solution DataFrame and produces animation frames, storing them on a list
+plotlist = [plot(solution, k) for k in range(TIME_STEPS)]
 
+# Creates and saves an animation based on the frames list. You may change the interval value to make the animation faster or slower.
+# Interval represents the delay between frames in miliseconds. It is recommended to base this interval value on the omega2 and alpha2 values, but
+# trial and error works too. If the interval is too long, the animation becomes very static and slow. Otherwise, it gets very stuttery and fast.
+#%%
+print("Creating animation file.")
 
+anim = animation.PlotnineAnimation(plotlist, interval = 1/FPS * 1000 * SLOWING_FACTOR) 
 
-anim = animation.PlotnineAnimation(plotlist, interval = 20)
+print("Saving animation file.")
 
-anim.save('teste6_fixed_deltaT.mp4')
+anim.save('test.mp4')
+
+print("Animation file saved.")
