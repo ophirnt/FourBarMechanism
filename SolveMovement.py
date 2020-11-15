@@ -158,7 +158,7 @@ plot = ( ggplot(sol) +
            annotate("label", x = 0, y = -200, label = f'$\\alpha_{{3a}}={sol.alpha3a[k]:.2f}~rad/s^2$, $\\alpha_{{3c}}={sol.alpha3c[k]:.2f}~rad/s^2$') +
            annotate("label", x = 70, y = -200, label = f'$\\alpha_{{4a}}={sol.alpha4a[k]:.2f}~rad/s^2$, $\\alpha_{{4c}}={sol.alpha4c[k]:.2f}~rad/s^2$') +
          #
-         labs(x='$x$', y='$y$') +
+         labs(x='$x~[mm]$', y='$y~[mm]$') +
          coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y) + # Scales plot limits, avoiding it to be bigger than necessary. You may comment this out if you wish to do so.
          theme_bw() # Plot is prettier with this theme compared to the default.
          ) 

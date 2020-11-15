@@ -172,6 +172,6 @@ anim = animation.PlotnineAnimation(plotlist, interval = 1/FPS * 1000 * SLOWING_F
 
 print("Saving animation file. This may take a while.")
 
-anim.save('testAnimation.mp4')
+anim.save('Animation.mp4')
 
 print("Animation file saved.")
