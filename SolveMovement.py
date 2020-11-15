@@ -22,7 +22,7 @@ INPUT_DATA = (
         50.8, # L2
         177.8, # L3
         228.6, # L4
-        0, # theta2
+        pi/6, # theta2
         10, # omega2
         0, # alpha2
         152.4, # Rpa
@@ -31,7 +31,7 @@ INPUT_DATA = (
 
 FPS = 72 # Frames per second of animation
 START_TIME = 0
-END_TIME = 5 # Two mechanism turns
+END_TIME = 5 # 5 * omega2/(2*pi) = 7,95 rotations
 SLOWING_FACTOR = 2.5 # Slowing factor. 1x is normal speed
 TIME_STEPS = int( (END_TIME-START_TIME) * FPS)
 ACC_SCALE = 0.01 # scale acceleration vector (otherwise they may get disproportionately long)
@@ -91,24 +91,30 @@ plot = ( ggplot(sol) +
          # 4TH LINKAGE
          geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, xend = sol.Ro4[k].real, yend = sol.Ro4[k].imag)) +
          geom_point(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag), shape = 'o', size = 3) +
+         # NODES IDENTIFICATION
+         annotate("text", x = 0, y = -10, label = "$O_1$") +
+         annotate("text", x = sol.Ro4[k].real, y = sol.Ro4[k].imag -10, label = "$O_4$") +
+         annotate("text", x = sol.Ra[k].real, y = sol.Ra[k].imag -10, label = "$A$") +
+         annotate("text", x = sol.Rba[k].real -5, y = sol.Rba[k].imag -10, label = "$B$") +
+         annotate("text", x = sol.Rpa[k].real, y = sol.Rpa[k].imag -10, label = "$P$") +
          # ACCELERATIONS ARROWS (you may remove if you wish to remove acceleration informations)
-         geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, \
-                          xend = sol.Rba[k].real + sol.Aba[k].real * ACC_SCALE, \
-                          yend = sol.Rba[k].imag + sol.Aba[k].imag * ACC_SCALE),\
-                      colour='red', arrow=arrow()) + # Point B
-        geom_segment(aes(x = sol.Ra[k].real, y = sol.Ra[k].imag, \
-                          xend = sol.Ra[k].real + sol.Aa[k].real * ACC_SCALE, \
-                          yend = sol.Ra[k].imag + sol.Aa[k].imag * ACC_SCALE),\
-                      colour='red', arrow=arrow()) + # Point A
-        geom_segment(aes(x = sol.Rpa[k].real, y = sol.Rpa[k].imag, \
-                          xend = sol.Rpa[k].real + sol.Apaa[k].real * ACC_SCALE, \
-                          yend = sol.Rpa[k].imag + sol.Apaa[k].imag * ACC_SCALE),\
-                      colour='red', arrow=arrow()) + # Point C
-         # ACCELERATIONS TEXTS (you may comment if you wish to remove acceleration informations)
-         # inputting text between '$ $' makes plotnine produce beautiful LaTeX text
-         annotate("text", x = sol.Rba[k].real-30, y = sol.Rba[k].imag+10, label = f'${np.absolute(sol.Aba[k])/1000:.2f}~m/s^2$', colour='red') +
-         annotate("text", x = sol.Ra[k].real+20, y = sol.Ra[k].imag-20, label = f'${np.absolute(sol.Aa[k])/1000:.2f}~m/s^2$', colour='red') +
-         annotate("text", x = sol.Rpa[k].real+10, y = sol.Rpa[k].imag+20, label = f'${np.absolute(sol.Apaa[k])/1000:.2f}~m/s^2$', colour='red') +
+        #  geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, \
+        #                   xend = sol.Rba[k].real + sol.Aba[k].real * ACC_SCALE, \
+        #                   yend = sol.Rba[k].imag + sol.Aba[k].imag * ACC_SCALE),\
+        #               colour='red', arrow=arrow()) + # Point B
+        # geom_segment(aes(x = sol.Ra[k].real, y = sol.Ra[k].imag, \
+        #                   xend = sol.Ra[k].real + sol.Aa[k].real * ACC_SCALE, \
+        #                   yend = sol.Ra[k].imag + sol.Aa[k].imag * ACC_SCALE),\
+        #               colour='red', arrow=arrow()) + # Point A
+        # geom_segment(aes(x = sol.Rpa[k].real, y = sol.Rpa[k].imag, \
+        #                   xend = sol.Rpa[k].real + sol.Apaa[k].real * ACC_SCALE, \
+        #                   yend = sol.Rpa[k].imag + sol.Apaa[k].imag * ACC_SCALE),\
+        #               colour='red', arrow=arrow()) + # Point C
+        #  # ACCELERATIONS TEXTS (you may comment if you wish to remove acceleration informations)
+        #  # inputting text between '$ $' makes plotnine produce beautiful LaTeX text
+        #  annotate("text", x = sol.Rba[k].real-30, y = sol.Rba[k].imag+10, label = f'${np.absolute(sol.Aba[k])/1000:.2f}~m/s^2$', colour='red') +
+        #  annotate("text", x = sol.Ra[k].real+20, y = sol.Ra[k].imag-20, label = f'${np.absolute(sol.Aa[k])/1000:.2f}~m/s^2$', colour='red') +
+        #  annotate("text", x = sol.Rpa[k].real+10, y = sol.Rpa[k].imag+20, label = f'${np.absolute(sol.Apaa[k])/1000:.2f}~m/s^2$', colour='red') +
          # 
          labs(x='$x$', y='$y$') +
          coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y) + # Scales plot limits, avoiding it to be bigger than necessary. You may comment this out if you wish to do so.

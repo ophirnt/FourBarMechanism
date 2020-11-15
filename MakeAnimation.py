@@ -32,8 +32,8 @@ INPUT_DATA = (
 
 FPS = 72 # Frames per second of animation
 START_TIME = 0
-END_TIME = 5 # Two mechanism turns
-SLOWING_FACTOR = 2.5 # Slowing factor. 1x is normal speed
+END_TIME = 5 # 3.125 mechanism turns
+SLOWING_FACTOR = 4 # Slowing factor. 1x is normal speed
 TIME_STEPS = int( (END_TIME-START_TIME) * FPS)
 ACC_SCALE = 0.01 # scale acceleration vector (otherwise they may get disproportionately long)
 SCALE_X = (-125, 175) # sets the X limits for the plot frame
@@ -55,13 +55,11 @@ steps = np.linspace(START_TIME, END_TIME, TIME_STEPS) # Time steps of the simula
 
 # Calculates the mechanism movements and stores them in the DataFrame
 for time in steps:
-    
-    deltaT = time
 
     print('Time step:', time, 's')
     
     # Uses the uniformly accelerated movement position equation to determine new theta2 position and determine new mechanism properties
-    mech.updateTheta2(theta2_0 + mech.omega2 * deltaT + mech.alpha2 * deltaT**2/2) 
+    mech.updateTheta2(theta2_0 + mech.omega2 * time + mech.alpha2 * time**2/2) 
     
     new = pd.DataFrame({'time': time, 
                         'theta2': mech.theta2, 
@@ -124,6 +122,12 @@ def plot(solu, k):
          # 4TH LINKAGE
          geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, xend = sol.Ro4[k].real, yend = sol.Ro4[k].imag)) +
          geom_point(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag), shape = 'o', size = 3) +
+         # NODES IDENTIFICATION
+         annotate("text", x = 0, y = -20, label = "$O_1$") +
+         annotate("text", x = sol.Ro4[k].real, y = sol.Ro4[k].imag -20, label = "$O_4$") +
+         annotate("text", x = sol.Ra[k].real+10, y = sol.Ra[k].imag, label = "$A$") +
+         annotate("text", x = sol.Rba[k].real +20, y = sol.Rba[k].imag -10, label = "$B$") +
+         annotate("text", x = sol.Rpa[k].real, y = sol.Rpa[k].imag -40, label = "$P$") +
          # ACCELERATIONS ARROWS (you may remove if you wish to remove acceleration informations)
          geom_segment(aes(x = sol.Rba[k].real, y = sol.Rba[k].imag, \
                           xend = sol.Rba[k].real + sol.Aba[k].real * ACC_SCALE, \
@@ -142,8 +146,10 @@ def plot(solu, k):
          annotate("text", x = sol.Rba[k].real-30, y = sol.Rba[k].imag+10, label = f'${np.absolute(sol.Aba[k])/1000:.2f}~m/s^2$', colour='red') +
          annotate("text", x = sol.Ra[k].real+20, y = sol.Ra[k].imag-20, label = f'${np.absolute(sol.Aa[k])/1000:.2f}~m/s^2$', colour='red') +
          annotate("text", x = sol.Rpa[k].real+10, y = sol.Rpa[k].imag+20, label = f'${np.absolute(sol.Apaa[k])/1000:.2f}~m/s^2$', colour='red') +
+         # TIME IDENTIFICATION
+         annotate("label", x = 120, y = -80, label = f'Time: ${sol.time[k]:.2f}~s$', alpha = 1) +
          # 
-         labs(x='$x$', y='$y$') +
+         labs(x='$x~[mm]$', y='$y~[mm]$') +
          coord_cartesian(xlim=SCALE_X, ylim=SCALE_Y) + # Scales plot limits, avoiding it to be bigger than necessary. You may comment this out if you wish to do so.
          theme_bw() # Plot is prettier with this theme compared to the default.
          ) 
@@ -156,8 +162,8 @@ pd.options.mode.chained_assignment = None # Avoids annoying warning that makes t
 plotlist = [plot(solution, k) for k in range(TIME_STEPS)]
 
 # Creates and saves an animation based on the frames list. You may change the interval value to make the animation faster or slower.
-# Interval represents the delay between frames in miliseconds. It is recommended to base this interval value on the omega2 and alpha2 values, but
-# trial and error works too. If the interval is too long, the animation becomes very static and slow. Otherwise, it gets very stuttery and fast.
+# Interval represents the delay between frames in miliseconds.If the interval is too long, the animation becomes very static and slow. Otherwise, 
+# it gets very stuttery and fast. It is recommended to only alter the FPS, START_TIME, END_TIME and SLOWING_FACTOR parameters to adjust the animation.
 #%%
 print("Creating animation file.")
 
