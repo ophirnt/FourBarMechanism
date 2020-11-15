@@ -6,7 +6,7 @@ Created on Mon Sep  9 17:58:09 2019
 @author: ophir
 """
 
-''' This script should provide a good example on how to produce four bar mechanism animations using the FourBarMechanism class. Plots of the mechanism
+''' This script provides a good example on how to produce four bar mechanism animations using the FourBarMechanism class. Plots of the mechanism
 are produced and animated using plotnine, a ggplot2 port for Python. '''
 
 from FourBarMechanism import FourBarMechanism
@@ -161,15 +161,16 @@ pd.options.mode.chained_assignment = None # Avoids annoying warning that makes t
 # Iterates on the solution DataFrame and produces animation frames, storing them on a list
 plotlist = [plot(solution, k) for k in range(TIME_STEPS)]
 
+#%%
 # Creates and saves an animation based on the frames list. You may change the interval value to make the animation faster or slower.
 # Interval represents the delay between frames in miliseconds.If the interval is too long, the animation becomes very static and slow. Otherwise, 
 # it gets very stuttery and fast. It is recommended to only alter the FPS, START_TIME, END_TIME and SLOWING_FACTOR parameters to adjust the animation.
-#%%
-print("Creating animation file.")
+
+print("Creating animation file. This may take a while.")
 
 anim = animation.PlotnineAnimation(plotlist, interval = 1/FPS * 1000 * SLOWING_FACTOR) 
 
-print("Saving animation file.")
+print("Saving animation file. This may take a while.")
 
 anim.save('testAnimation.mp4')
 
